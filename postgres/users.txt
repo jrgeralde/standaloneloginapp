@@ -1,0 +1,5 @@
+
+username        password                                                        active
+"R"		"$2b$10$blKrecnvUpvnQsHT4IznquuoPrMxFtwgFTunNXU4O2TfQlokakyQu"	true
+"ADMIN"		"$2b$10$BXpb9KZFpDA3ZeO3JbLaaeMNDW.f1FMqqeSlD.FuVWXOWtN0OO25G"	true
+"ROY"		"$2b$10$tKnmwO2f7AfUSXYbDCAqYeIz/3A3NXOLVNzOfVPAkMRd0FwydWvCa"	true

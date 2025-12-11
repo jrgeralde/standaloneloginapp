@@ -1,0 +1,75 @@
+import { query } from '../../../lib/db';
+import { authenticate } from '../../../middleware/auth';
+
+// GET /api/roles - list all roles
+export async function GET(req) {
+  try {
+    // Authenticate the user
+    const user = await authenticate(req);
+
+    // Fetch roles from the database
+    const result = await query(
+      'SELECT id, name, description FROM roles ORDER BY id',
+      []
+    );
+
+    return new Response(JSON.stringify(result.rows), { status: 200 });
+  } catch (err) {
+    // Handle authentication errors
+    if (['Unauthorized', 'No token provided', 'Invalid session'].includes(err.message)) {
+      return new Response(JSON.stringify({ message: err.message }), { status: 401 });
+    }
+
+    // Log server errors
+    console.error('Error fetching roles:', err);
+    return new Response(
+      JSON.stringify({ message: 'Server error while fetching roles' }),
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/roles - create a new role
+export async function POST(req) {
+  try {
+    // Authenticate the user
+    const user = await authenticate(req);
+
+    const { name, description } = await req.json();
+
+    // Validate input
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return new Response(
+        JSON.stringify({ message: 'Role name is required' }),
+        { status: 400 }
+      );
+    }
+
+    // Insert the new role
+    const result = await query(
+      'INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING id, name, description',
+      [name.trim(), description ?? null]
+    );
+
+    return new Response(JSON.stringify(result.rows[0]), { status: 201 });
+  } catch (err) {
+    // Handle authentication errors
+    if (['Unauthorized', 'No token provided', 'Invalid session'].includes(err.message)) {
+      return new Response(JSON.stringify({ message: err.message }), { status: 401 });
+    }
+
+    // Handle unique constraint violation (role name must be unique)
+    if (err.code === '23505') {
+      return new Response(
+        JSON.stringify({ message: 'Role name must be unique' }),
+        { status: 409 }
+      );
+    }
+
+    console.error('Error creating role:', err);
+    return new Response(
+      JSON.stringify({ message: 'Server error while creating role' }),
+      { status: 500 }
+    );
+  }
+}
