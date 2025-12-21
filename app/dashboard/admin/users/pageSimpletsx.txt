@@ -1,0 +1,48 @@
+'use client';
+
+import {useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { checkUserPermissions } from '@/lib/checkuserpermissions';
+
+export default function UsersPage() {
+  // 1. ALL HOOKS MUST GO HERE (No returns allowed above this)
+  const [username, setUsername] = useState<string | null>(null);
+
+  const [canEdit, setCanEdit] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  // This is the hook you were trying to log
+  useEffect(() => {
+    console.log("!!! HOOK TRIGGERED !!!");
+    
+    const stored = sessionStorage.getItem('username');
+    if (stored) setUsername(stored);
+  }, []);
+
+  // 2. LOGIC THAT USES THE HOOKS
+  useEffect(() => {
+    if (!username) return;
+
+    const checkPerms = async () => {
+      const allowed = await checkUserPermissions(['ADMINISTRATOR', 'USERS_CANEDITUSERS']);
+      setCanEdit(allowed);
+      setLoading(false); // Move this inside the logic
+    };
+
+    checkPerms();
+  }, [username]);
+
+  // 3. ONLY NOW CAN YOU HAVE RETURN STATEMENTS
+  if (loading) {
+    return <div>Loading...</div>; // This is the "Wall"
+  }
+
+  // 4. FINAL PAGE JSX
+  return (
+    <div>
+      <h1>Users</h1>
+      <button onClick={() => console.log(canEdit)}>Edit User</button>
+    </div>
+  );
+}

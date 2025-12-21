@@ -1,0 +1,146 @@
+'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { FaChevronDown, FaHome, FaUserShield, FaSignOutAlt } from 'react-icons/fa';
+import ConfirmModal from '@/components/ConfirmModal';
+import SessionTimeoutWrapper from '@/components/SessionTimeoutWrapper'; // wrap dashboard
+
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [adminOpen, setAdminOpen] = useState(false);
+
+  // Protect dashboard pages
+  useEffect(() => {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      router.push('/'); // redirect to login
+    }
+  }, [router]);
+
+  // Logout function (used by manual logout & session timeout)
+  const logout = async () => {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      await fetch('/api/logout', {
+        method: 'POST',
+        headers: { Authorization: token }, // raw token
+      });
+    }
+    sessionStorage.removeItem('token');
+    router.push('/');
+  };
+
+  const handleLogout = async () => {
+    const confirmed = await ConfirmModal(
+      'Are you sure you want to logout?',
+      { okText: 'Yes', cancelText: 'No', okColor: 'bg-red-600 hover:bg-red-700' }
+    );
+
+    if (confirmed) logout();
+  };
+
+  const handleAdminClick = (action: string, e?: React.FormEvent) => {
+    e?.preventDefault();
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      router.push('/'); // redirect to login
+    } else if (action === 'Users') {
+      router.push('/dashboard/admin/users');
+      setAdminOpen(false);
+    } else if (action === 'Roles') {
+      router.push('/dashboard/admin/roles');
+      setAdminOpen(false);
+    } else {
+      alert(`${action} is Pressed`);
+    }
+  };
+
+  return (
+    <SessionTimeoutWrapper
+      timeoutMinutes={.5}       // inactivity timeout
+      countdownSeconds={10}     // countdown before auto logout
+      onLogout={logout}         // called automatically
+    >
+      <div className="min-h-screen flex flex-col">
+        {/* Header */}
+        <header className="bg-blue-600 shadow px-6 py-2 flex items-center justify-between">
+          {/* Left: Home */}
+          <div>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center gap-2 text-lg font-bold text-white px-4 py-2 rounded hover:bg-white hover:text-blue-600 active:bg-white active:text-blue-800 transition-colors"
+            >
+              <FaHome size={20} /> Home
+            </button>
+          </div>
+
+          {/* Right: Admin + Logout */}
+          <div className="flex items-center gap-6">
+            {/* Admin dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setAdminOpen(!adminOpen)}
+                className="flex items-center gap-2 text-lg font-bold text-white px-4 py-2 rounded hover:bg-white hover:text-blue-600 active:bg-white active:text-blue-800 transition-colors"
+              >
+                <FaUserShield size={20} /> Admin{' '}
+                <FaChevronDown className={`transition-transform ${adminOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {adminOpen && (
+                <ul className="absolute right-0 mt-2 w-52 bg-white border rounded shadow-md z-50">
+                  <li>
+                    <button
+                      onClick={() => handleAdminClick('Users')}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-100 text-lg"
+                    >
+                      Users
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => handleAdminClick('Roles')}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-100 text-lg"
+                    >
+                      Roles
+                    </button>
+                  </li>
+                  <li>
+                    <hr className="my-1 border-gray-300" />
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => handleAdminClick('Roles Assignment')}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-100 text-lg"
+                    >
+                      Roles Assignment
+                    </button>
+                  </li>
+                </ul>
+              )}
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-lg font-bold text-white px-4 py-2 rounded hover:bg-white hover:text-blue-600 active:bg-white active:text-blue-800 transition-colors"
+            >
+              <FaSignOutAlt size={20} /> Logout
+            </button>
+          </div>
+        </header>
+
+        {/* Main content */}
+        <main className="flex-1 p-2 container bg-zinc-50 dark:bg-gray-900 max-w-full">{children}</main>
+
+        {/* Footer */}
+        <footer className="bg-blue-600 text-white p-2 text-center">
+          © {new Date().getFullYear()} My Dashboard App
+        </footer>
+      </div>
+      </SessionTimeoutWrapper>
+  );
+}

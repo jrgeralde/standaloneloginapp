@@ -1,0 +1,20 @@
+//app/api/protected/route.js
+
+import { authenticate } from '../../../middleware/auth';
+
+export async function GET() {
+  try {
+    const user = await authenticate();
+
+    return Response.json({
+      userId: user.user_id,
+      email: user.email,
+      name: user.name
+    });
+  } catch {
+    return Response.json(
+      { message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+}
